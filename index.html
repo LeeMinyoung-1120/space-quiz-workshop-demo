@@ -142,6 +142,16 @@
     .result-score small { color: var(--muted); font-size: 22px; font-weight: 500; }
     .result-summary { border-radius: 12px; background: var(--surface-soft); padding: 14px; margin: 20px 0; font-size: 14px; }
     .result .primary { width: 100%; }
+    .review { text-align: left; margin: 0 0 20px; }
+    .review h3 { font-size: 16px; margin-bottom: 10px; }
+    .review ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+    .review li { border: 1px solid var(--line); border-left: 4px solid var(--red); border-radius: 12px; background: var(--surface-soft); padding: 12px 14px; font-size: 14px; }
+    .review li strong { display: block; margin-bottom: 6px; color: var(--text); }
+    .review li p { margin: 2px 0; color: var(--text); }
+    .review .mine { color: var(--red); }
+    .review .right { color: var(--green); }
+    .review .note { color: var(--muted); margin-top: 6px; }
+    .review-all-correct { border: 1px solid var(--green); border-radius: 12px; background: var(--green-soft); color: var(--green); padding: 12px 14px; margin: 0 0 20px; font-size: 14px; font-weight: 700; }
     @keyframes float { 0%, 100% { transform: translateY(0) rotate(-12deg); } 50% { transform: translateY(-10px) rotate(-5deg); } }
     @keyframes shake { 0%, 100% { transform: translateX(0); } 20%, 60% { transform: translateX(-5px); } 40%, 80% { transform: translateX(5px); } }
     @keyframes pop { 0% { transform: scale(.94); } 60% { transform: scale(1.03); } 100% { transform: scale(1); } }
@@ -216,6 +226,7 @@
             <div class="result-score"><span id="final-score"></span><small> / 100점</small></div>
             <p id="result-message"></p>
             <div class="result-summary" id="result-summary"></div>
+            <section class="review" id="review" aria-labelledby="review-title"></section>
             <button class="primary" id="restart" type="button">다시 탐사하기 <span aria-hidden="true">↗</span></button>
           </section>
         </div>
@@ -242,6 +253,42 @@
     let current = 0;
     let correct = 0;
     let answered = false;
+    let wrongAnswers = [];
+
+    function renderReview() {
+      const review = $("review");
+      review.replaceChildren();
+      const title = document.createElement("h3");
+      title.id = "review-title";
+      if (wrongAnswers.length === 0) {
+        title.textContent = "오답 복습";
+        const done = document.createElement("p");
+        done.className = "review-all-correct";
+        done.textContent = "✓ 모든 문항을 맞혔어요! 복습할 오답이 없습니다.";
+        review.append(title, done);
+        return;
+      }
+      title.textContent = `오답 복습 (${wrongAnswers.length}문항)`;
+      const list = document.createElement("ol");
+      wrongAnswers.forEach(({ index, selected }) => {
+        const item = questions[index];
+        const li = document.createElement("li");
+        const q = document.createElement("strong");
+        q.textContent = `${index + 1}번. ${item.question}`;
+        const mine = document.createElement("p");
+        mine.className = "mine";
+        mine.textContent = `✕ 내가 고른 답: ${item.options[selected]}`;
+        const right = document.createElement("p");
+        right.className = "right";
+        right.textContent = `✓ 정답: ${item.options[item.answer]}`;
+        const note = document.createElement("p");
+        note.className = "note";
+        note.textContent = item.explanation;
+        li.append(q, mine, right, note);
+        list.append(li);
+      });
+      review.append(title, list);
+    }
 
     function updateStats(completed) {
       $("progress").value = completed;
@@ -303,6 +350,7 @@
       $("result-message").textContent = reaction.message;
       $("final-score").textContent = correct * 10;
       $("result-summary").textContent = `총 10문항 중 ${correct}문항 정답 · ${10 - correct}문항 오답 · 정답률 ${correct * 10}%`;
+      renderReview();
       $("result-title").focus();
     }
 
@@ -329,6 +377,7 @@
       options[item.answer].classList.add("correct");
       options[item.answer].querySelector(".letter").textContent = "✓";
       if (!isCorrect) {
+        wrongAnswers.push({ index: current, selected: selectedIndex });
         options[selectedIndex].classList.add("wrong");
         options[selectedIndex].querySelector(".letter").textContent = "×";
       }
@@ -347,6 +396,8 @@
     $("restart").addEventListener("click", () => {
       current = 0;
       correct = 0;
+      wrongAnswers = [];
+      $("review").replaceChildren();
       $("result").hidden = true;
       $("quiz").hidden = false;
       renderQuestion(true);
