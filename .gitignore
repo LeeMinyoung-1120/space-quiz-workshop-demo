@@ -1,0 +1,27 @@
+# Credentials and local configuration
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+.npmrc
+.netrc
+credentials.json
+secrets.*
+
+# Local tools and generated files
+node_modules/
+dist/
+coverage/
+*.log
+*.tmp
+.vscode/
+.idea/
+.copilot/
+
+# Operating system files
+.DS_Store
+Thumbs.db
+Desktop.ini
